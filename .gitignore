@@ -1,0 +1,6 @@
+__pycache__/
+*.pyc
+.venv/
+docubridge.db
+users.db
+DocuBridge_Files/

@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <title>Dashboard | DocuBridge</title>
+    <style>
+        .dashboard-card { background: var(--card-bg); width: 100%; max-width: 750px; padding: 30px; border-radius: 20px; border: 1px solid var(--border); box-shadow: 0 15px 35px var(--shadow); }
+        .drop-zone { border: 2px dashed var(--border); padding: 40px; border-radius: 16px; text-align: center; cursor: pointer; transition: 0.3s; margin: 20px 0; }
+        .drop-zone.drag-over { border-color: var(--accent); background: rgba(56, 189, 248, 0.05); }
+        .drop-zone input { display: none; }
+        
+        .progress-wrapper { display: none; margin: 20px 0; }
+        .progress-container { background: var(--border); border-radius: 10px; height: 8px; overflow: hidden; }
+        .progress-bar { background: var(--accent); width: 0%; height: 100%; transition: 0.4s; }
+
+        .history-section { margin-top: 40px; text-align: left; }
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        th, td { padding: 12px; border-bottom: 1px solid var(--border); font-size: 0.9rem; }
+        th { opacity: 0.6; font-weight: 500; }
+    </style>
+</head>
+<body>
+    <nav class="nav">
+        <a href="/" class="logo">DocuBridge</a>
+        <div style="display:flex; gap:15px; align-items:center;">
+            <span>Hi, <b>{{ user }}</b></span>
+            <button class="mode-btn" onclick="toggleMode()">🌓</button>
+            <a href="/logout" class="btn" style="width:auto; padding:5px 15px; background:transparent; border:1px solid #ef4444; color:#ef4444;">Logout</a>
+        </div>
+    </nav>
+
+    <div class="main-container">
+        <div class="dashboard-card">
+            <h1>Convert PDF to Word</h1>
+            
+            <form id="upload-form" action="/upload" method="POST" enctype="multipart/form-data">
+                <div id="drop-zone" class="drop-zone">
+                    <span id="file-label">Drag & Drop PDF here or Click to Browse</span>
+                    <input type="file" name="files" id="file-input" accept=".pdf" required>
+                </div>
+
+                <div id="progress-wrapper" class="progress-wrapper">
+                    <div class="progress-container"><div id="progress-bar" class="progress-bar"></div></div>
+                    <p style="font-size: 0.8rem; margin-top: 5px; opacity: 0.7;">Processing your file...</p>
+                </div>
+
+                <button type="submit" class="btn">Start Conversion 🚀</button>
+            </form>
+
+            <button onclick="location.href='/open-folder'" class="btn" style="background:transparent; border:1px solid var(--accent); color:var(--accent); margin-top:15px;">
+                📂 Open Output Folder
+            </button>
+
+            <div class="history-section">
+                <h2>Conversion History</h2>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>File Name</th>
+                            <th style="text-align:right;">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if history %}
+                            {% for item in history %}
+                            <tr>
+                                <td>{{ item[1] }}</td>
+                                <td style="text-align:right;">
+                                    <a href="/delete/{{ item[0] }}" style="color:#ef4444; text-decoration:none;">Delete</a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        {% else %}
+                            <tr><td colspan="2" style="text-align:center; opacity:0.5; padding:20px;">No history yet.</td></tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Drag & Drop + Progress Logic
+        const dropZone = document.getElementById('drop-zone');
+        const fileInput = document.getElementById('file-input');
+        const fileLabel = document.getElementById('file-label');
+        const uploadForm = document.getElementById('upload-form');
+        const progressWrapper = document.getElementById('progress-wrapper');
+        const progressBar = document.getElementById('progress-bar');
+
+        dropZone.onclick = () => fileInput.click();
+        dropZone.ondragover = (e) => { e.preventDefault(); dropZone.classList.add('drag-over'); };
+        dropZone.ondragleave = () => dropZone.classList.remove('drag-over');
+        dropZone.ondrop = (e) => {
+            e.preventDefault(); dropZone.classList.remove('drag-over');
+            fileInput.files = e.dataTransfer.files;
+            if(fileInput.files.length > 0) fileLabel.innerText = fileInput.files[0].name;
+        };
+        fileInput.onchange = () => { if(fileInput.files.length > 0) fileLabel.innerText = fileInput.files[0].name; };
+
+        uploadForm.onsubmit = () => {
+            progressWrapper.style.display = 'block';
+            let width = 0;
+            setInterval(() => { if (width < 90) { width += 5; progressBar.style.width = width + '%'; } }, 300);
+        };
+
+        function toggleMode() {
+            const theme = document.documentElement.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
+            document.documentElement.setAttribute('data-theme', theme);
+            localStorage.setItem('theme', theme);
+        }
+        document.documentElement.setAttribute('data-theme', localStorage.getItem('theme') || 'dark');
+    </script>
+</body>
+</html>
